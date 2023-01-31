@@ -48,7 +48,11 @@ func Provider() *schema.Provider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"materialize_secret": resources.Secret(),
+			"materialize_cluster":         resources.Cluster(),
+			"materialize_cluster_replica": resources.ClusterReplica(),
+			"materialize_database":        resources.Database(),
+			"materialize_secret":          resources.Secret(),
+			"materialize_schema":          resources.Schema(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"materialize_secret_data": datasources.DataSourceSecret(),
