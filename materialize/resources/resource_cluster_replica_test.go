@@ -30,17 +30,23 @@ func TestResourceClusterReplicaCreate(t *testing.T) {
 func TestResourceClusterReplicaRead(t *testing.T) {
 	r := require.New(t)
 	b := newClusterReplicaBuilder("cluster", "replica")
-	r.Equal(`SELECT name FROM mz_cluster_replicas WHERE name = 'replica';`, b.Read())
+	r.Equal(`
+		SELECT
+			mz_cluster_replicas.id,
+			mz_cluster_replicas.name,
+			mz_clusters.name,
+			mz_cluster_replicas.size,
+			mz_cluster_replicas.availability_zone
+		FROM mz_cluster_replicas
+		JOIN mz_clusters
+			ON mz_cluster_replicas.cluster_id = mz_clusters.id
+		WHERE mz_cluster_replicas.name = 'replica'
+		AND mz_clusters.name = 'cluster';
+	`, b.Read())
 }
 
 func TestResourceClusterReplicaDrop(t *testing.T) {
 	r := require.New(t)
 	b := newClusterReplicaBuilder("cluster", "replica")
 	r.Equal(`DROP CLUSTER REPLICA cluster.replica;`, b.Drop())
-}
-
-func TestResourceClusterReplicaRename(t *testing.T) {
-	r := require.New(t)
-	b := newClusterReplicaBuilder("cluster", "replica")
-	r.Equal(`ALTER CLUSTER REPLICA cluster.replica RENAME TO cluster.new_replica;`, b.Rename("new_replica"))
 }

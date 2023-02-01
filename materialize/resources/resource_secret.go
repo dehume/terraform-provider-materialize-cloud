@@ -103,8 +103,8 @@ func resourceSecretRead(ctx context.Context, d *schema.ResourceData, meta interf
 	conn.QueryRow(ctx, q).Scan(&id, &name, &schema)
 
 	d.SetId(id)
-	d.Set("schemaName", schema)
 	d.Set("secretName", name)
+	d.Set("schemaName", schema)
 
 	return diags
 }

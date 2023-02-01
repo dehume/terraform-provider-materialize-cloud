@@ -47,7 +47,7 @@ func (b *DatabaseBuilder) Create() string {
 
 func (b *DatabaseBuilder) Read() string {
 	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`SELECT name FROM mz_databases WHERE name = '%s';`, b.databaseName))
+	q.WriteString(fmt.Sprintf(`SELECT id, name FROM mz_databases WHERE name = '%s';`, b.databaseName))
 	return q.String()
 }
 
@@ -57,48 +57,45 @@ func (b *DatabaseBuilder) Drop() string {
 	return q.String()
 }
 
-func resourceDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
-
-	databaseName := d.Get("name").(string)
-
-	builder := newDatabaseBuilder(databaseName)
-	q := builder.Create()
-
-	diags := Exec(ctx, conn, q)
-	d.SetId(databaseName)
-
-	return diags
-}
-
 func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
+	var diags diag.Diagnostics
 
+	conn := meta.(*pgx.Conn)
 	databaseName := d.Get("name").(string)
 
 	builder := newDatabaseBuilder(databaseName)
 	q := builder.Read()
 
-	diags := Exec(ctx, conn, q)
-	d.SetId(databaseName)
+	var id, name string
+	conn.QueryRow(ctx, q).Scan(&id, &name)
+
+	d.SetId(id)
+	d.Set("databaseName", name)
 
 	return diags
 }
 
-func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	conn := meta.(*pgx.Conn)
+	databaseName := d.Get("name").(string)
+
+	builder := newDatabaseBuilder(databaseName)
+	q := builder.Create()
+
+	Exec(ctx, conn, q)
+	return resourceDatabaseRead(ctx, d, meta)
+}
+
+func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	return diag.Errorf("not implemented")
 }
 
 func resourceDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	conn := meta.(*pgx.Conn)
-
 	databaseName := d.Get("name").(string)
 
 	builder := newDatabaseBuilder(databaseName)
 	q := builder.Drop()
 
-	diags := Exec(ctx, conn, q)
-	d.SetId(databaseName)
-
-	return diags
+	return Exec(ctx, conn, q)
 }

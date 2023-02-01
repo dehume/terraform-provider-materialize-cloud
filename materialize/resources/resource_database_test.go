@@ -15,7 +15,7 @@ func TestResourceDatabaseCreate(t *testing.T) {
 func TestResourceDatabaseRead(t *testing.T) {
 	r := require.New(t)
 	b := newDatabaseBuilder("database")
-	r.Equal(`SELECT name FROM mz_databases WHERE name = 'database';`, b.Read())
+	r.Equal(`SELECT id, name FROM mz_databases WHERE name = 'database';`, b.Read())
 }
 
 func TestResourceDatabaseDrop(t *testing.T) {

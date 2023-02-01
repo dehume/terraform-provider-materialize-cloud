@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"terraform-materialize/materialize/datasources"
 	"terraform-materialize/materialize/resources"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -51,11 +50,8 @@ func Provider() *schema.Provider {
 			"materialize_cluster":         resources.Cluster(),
 			"materialize_cluster_replica": resources.ClusterReplica(),
 			"materialize_database":        resources.Database(),
-			"materialize_secret":          resources.Secret(),
 			"materialize_schema":          resources.Schema(),
-		},
-		DataSourcesMap: map[string]*schema.Resource{
-			"materialize_secret_data": datasources.DataSourceSecret(),
+			"materialize_secret":          resources.Secret(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
@@ -66,8 +62,6 @@ func connectionString(host string, username string, password string, port int, d
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	var diags diag.Diagnostics
-
 	host := d.Get("host").(string)
 	username := d.Get("username").(string)
 	password := d.Get("password").(string)
@@ -76,6 +70,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 
 	connStr := connectionString(host, username, password, port, database)
 
+	var diags diag.Diagnostics
 	c, err := pgx.Connect(ctx, connStr)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{

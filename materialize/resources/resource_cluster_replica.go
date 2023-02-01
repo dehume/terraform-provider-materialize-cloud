@@ -79,8 +79,8 @@ func ClusterReplica() *schema.Resource {
 }
 
 type ClusterReplicaBuilder struct {
-	clusterName                string
 	replicaName                string
+	clusterName                string
 	size                       string
 	availabilityZone           string
 	introspectionInterval      string
@@ -90,8 +90,8 @@ type ClusterReplicaBuilder struct {
 
 func newClusterReplicaBuilder(clusterName, replicaName string) *ClusterReplicaBuilder {
 	return &ClusterReplicaBuilder{
-		clusterName: clusterName,
 		replicaName: replicaName,
+		clusterName: clusterName,
 	}
 }
 
@@ -150,7 +150,19 @@ func (b *ClusterReplicaBuilder) Create() string {
 
 func (b *ClusterReplicaBuilder) Read() string {
 	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`SELECT name FROM mz_cluster_replicas WHERE name = '%s';`, b.replicaName))
+	q.WriteString(fmt.Sprintf(`
+		SELECT
+			mz_cluster_replicas.id,
+			mz_cluster_replicas.name,
+			mz_clusters.name,
+			mz_cluster_replicas.size,
+			mz_cluster_replicas.availability_zone
+		FROM mz_cluster_replicas
+		JOIN mz_clusters
+			ON mz_cluster_replicas.cluster_id = mz_clusters.id
+		WHERE mz_cluster_replicas.name = '%s'
+		AND mz_clusters.name = '%s';
+	`, b.replicaName, b.clusterName))
 	return q.String()
 }
 
@@ -160,19 +172,35 @@ func (b *ClusterReplicaBuilder) Drop() string {
 	return q.String()
 }
 
-func (b *ClusterReplicaBuilder) Rename(newName string) string {
-	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`ALTER CLUSTER REPLICA %s.%s RENAME TO %s.%s;`, b.clusterName, b.replicaName, b.clusterName, newName))
-	return q.String()
+func resourceClusterReplicaRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	conn := meta.(*pgx.Conn)
+	replicaName := d.Get("name").(string)
+	clusterName := d.Get("cluster_name").(string)
+
+	builder := newClusterReplicaBuilder(replicaName, clusterName)
+	q := builder.Read()
+
+	var id, name, cluster, size, availability_zone string
+	conn.QueryRow(ctx, q).Scan(&id, &name, &cluster, &size, &availability_zone)
+
+	d.SetId(id)
+	d.Set("replicaName", name)
+	d.Set("clusterName", cluster)
+	d.Set("size", size)
+	d.Set("availabilityZone", availability_zone)
+
+	return diags
 }
 
 func resourceClusterReplicaCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	conn := meta.(*pgx.Conn)
 
+	replicaName := d.Get("name").(string)
 	clusterName := d.Get("cluster_name").(string)
-	replicaName := d.Get("replica_name").(string)
 
-	builder := newClusterReplicaBuilder(clusterName, replicaName)
+	builder := newClusterReplicaBuilder(replicaName, clusterName)
 
 	// Set optionals
 	if v, ok := d.GetOk("size"); ok {
@@ -197,57 +225,22 @@ func resourceClusterReplicaCreate(ctx context.Context, d *schema.ResourceData, m
 
 	q := builder.Create()
 
-	diags := Exec(ctx, conn, q)
-	d.SetId(clusterName + ":" + replicaName)
-
-	return diags
-}
-
-func resourceClusterReplicaRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
-
-	clusterName := d.Get("cluster_name").(string)
-	replicaName := d.Get("name").(string)
-
-	builder := newClusterReplicaBuilder(clusterName, replicaName)
-	q := builder.Read()
-
-	diags := Exec(ctx, conn, q)
-	d.SetId(clusterName + ":" + replicaName)
-
-	return diags
-}
-
-func resourceClusterReplicaUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
-
-	clusterName := d.Get("cluster_name").(string)
-	replicaName := d.Get("name").(string)
-
-	if d.HasChange("name") {
-		updatedName := d.Get("name").(string)
-
-		builder := newClusterReplicaBuilder(clusterName, replicaName)
-		q := builder.Rename(replicaName)
-
-		Exec(ctx, conn, q)
-		d.Set("name", updatedName)
-	}
-
+	Exec(ctx, conn, q)
 	return resourceClusterReplicaRead(ctx, d, meta)
+}
+
+func resourceClusterReplicaUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	return diag.Errorf("not implemented")
 }
 
 func resourceClusterReplicaDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	conn := meta.(*pgx.Conn)
 
-	clusterName := d.Get("cluster_name").(string)
 	replicaName := d.Get("name").(string)
+	clusterName := d.Get("cluster_name").(string)
 
-	builder := newClusterReplicaBuilder(clusterName, replicaName)
+	builder := newClusterReplicaBuilder(replicaName, clusterName)
 	q := builder.Drop()
 
-	diags := Exec(ctx, conn, q)
-	d.SetId(clusterName + ":" + replicaName)
-
-	return diags
+	return Exec(ctx, conn, q)
 }
