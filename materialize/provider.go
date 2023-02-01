@@ -2,14 +2,14 @@ package provider
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
-	"terraform-materialize/materialize/datasources"
 	"terraform-materialize/materialize/resources"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/jackc/pgx/v4"
+	_ "github.com/lib/pq" //PostgreSQL db
 )
 
 func Provider() *schema.Provider {
@@ -48,10 +48,11 @@ func Provider() *schema.Provider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"materialize_secret": resources.Secret(),
-		},
-		DataSourcesMap: map[string]*schema.Resource{
-			"materialize_secret_data": datasources.DataSourceSecret(),
+			"materialize_cluster":         resources.Cluster(),
+			"materialize_cluster_replica": resources.ClusterReplica(),
+			"materialize_database":        resources.Database(),
+			"materialize_schema":          resources.Schema(),
+			"materialize_secret":          resources.Secret(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
@@ -62,8 +63,6 @@ func connectionString(host string, username string, password string, port int, d
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	var diags diag.Diagnostics
-
 	host := d.Get("host").(string)
 	username := d.Get("username").(string)
 	password := d.Get("password").(string)
@@ -72,7 +71,8 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 
 	connStr := connectionString(host, username, password, port, database)
 
-	c, err := pgx.Connect(ctx, connStr)
+	var diags diag.Diagnostics
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -82,5 +82,5 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		return nil, diags
 	}
 
-	return c, diags
+	return db, diags
 }

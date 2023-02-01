@@ -15,7 +15,26 @@ provider "materialize" {
   database = local.database
 }
 
-resource "materialize_secret" "example" {
-  name  = "example_dsh"
-  value = "decode('c2VjcmV0Cg==', 'base64')"
-}
+# resource "materialize_secret" "example_secret" {
+#   name  = "example_dsh"
+#   value = "decode('c2VjcmV0Cg==', 'base64')"
+# }
+
+# resource "materialize_database" "example_database" {
+#   name = "example_dsh"
+# }
+
+# resource "materialize_schema" "example_schema" {
+#   name          = "example_dsh"
+#   database_name = materialize_database.example_database.name
+# }
+
+# resource "materialize_cluster" "example_cluster" {
+#   name = "example_dsh"
+# }
+
+# resource "materialize_cluster_replica" "example_cluster_replica" {
+#   name         = "example_dsh"
+#   cluster_name = materialize_cluster.example_cluster.name
+#   size         = "2xsmall"
+# }

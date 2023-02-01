@@ -2,13 +2,13 @@ package resources
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/jackc/pgx/v4"
 )
 
 var replicaSizes = []string{
@@ -35,13 +35,13 @@ func ClusterReplica() *schema.Resource {
 		DeleteContext: resourceClusterReplicaDelete,
 
 		Schema: map[string]*schema.Schema{
-			"cluster_name": {
-				Description: "The cluster whose resources you want to create an additional computation of.",
+			"name": {
+				Description: "A name for this replica.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
-			"replica_name": {
-				Description: "A name for this replica.",
+			"cluster_name": {
+				Description: "The cluster whose resources you want to create an additional computation of.",
 				Type:        schema.TypeString,
 				Required:    true,
 			},
@@ -79,8 +79,8 @@ func ClusterReplica() *schema.Resource {
 }
 
 type ClusterReplicaBuilder struct {
-	clusterName                string
 	replicaName                string
+	clusterName                string
 	size                       string
 	availabilityZone           string
 	introspectionInterval      string
@@ -90,89 +90,117 @@ type ClusterReplicaBuilder struct {
 
 func newClusterReplicaBuilder(clusterName, replicaName string) *ClusterReplicaBuilder {
 	return &ClusterReplicaBuilder{
-		clusterName: clusterName,
 		replicaName: replicaName,
+		clusterName: clusterName,
 	}
 }
 
-func (crb *ClusterReplicaBuilder) Size(s string) *ClusterReplicaBuilder {
-	crb.size = s
-	return crb
+func (b *ClusterReplicaBuilder) Size(s string) *ClusterReplicaBuilder {
+	b.size = s
+	return b
 }
 
-func (crb *ClusterReplicaBuilder) AvailabilityZone(z string) *ClusterReplicaBuilder {
-	crb.availabilityZone = z
-	return crb
+func (b *ClusterReplicaBuilder) AvailabilityZone(z string) *ClusterReplicaBuilder {
+	b.availabilityZone = z
+	return b
 }
 
-func (crb *ClusterReplicaBuilder) IntrospectionInterval(i string) *ClusterReplicaBuilder {
-	crb.introspectionInterval = i
-	return crb
+func (b *ClusterReplicaBuilder) IntrospectionInterval(i string) *ClusterReplicaBuilder {
+	b.introspectionInterval = i
+	return b
 }
 
-func (crb *ClusterReplicaBuilder) IntrospectionDebugging() *ClusterReplicaBuilder {
-	crb.introspectionDebugging = true
-	return crb
+func (b *ClusterReplicaBuilder) IntrospectionDebugging() *ClusterReplicaBuilder {
+	b.introspectionDebugging = true
+	return b
 }
 
-func (crb *ClusterReplicaBuilder) IdleArrangementMergeEffort(e int) *ClusterReplicaBuilder {
-	crb.idleArrangementMergeEffort = e
-	return crb
+func (b *ClusterReplicaBuilder) IdleArrangementMergeEffort(e int) *ClusterReplicaBuilder {
+	b.idleArrangementMergeEffort = e
+	return b
 }
 
-func (crb *ClusterReplicaBuilder) Create() string {
+func (b *ClusterReplicaBuilder) Create() string {
 	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`CREATE CLUSTER REPLICA %s.%s`, crb.clusterName, crb.replicaName))
+	q.WriteString(fmt.Sprintf(`CREATE CLUSTER REPLICA %s.%s`, b.clusterName, b.replicaName))
 
-	if crb.size != "" {
-		q.WriteString(fmt.Sprintf(` SIZE = '%s'`, crb.size))
+	if b.size != "" {
+		q.WriteString(fmt.Sprintf(` SIZE = '%s'`, b.size))
 	}
 
-	if crb.availabilityZone != "" {
-		q.WriteString(fmt.Sprintf(` AVAILABILITY ZONE = '%s'`, crb.availabilityZone))
+	if b.availabilityZone != "" {
+		q.WriteString(fmt.Sprintf(` AVAILABILITY ZONE = '%s'`, b.availabilityZone))
 	}
 
-	if crb.introspectionInterval != "" {
-		q.WriteString(fmt.Sprintf(` INTROSPECTION INTERVAL = '%s'`, crb.introspectionInterval))
+	if b.introspectionInterval != "" {
+		q.WriteString(fmt.Sprintf(` INTROSPECTION INTERVAL = '%s'`, b.introspectionInterval))
 	}
 
-	if crb.introspectionDebugging {
+	if b.introspectionDebugging {
 		q.WriteString(` INTROSPECTION DEBUGGING = TRUE`)
 	}
 
-	if crb.idleArrangementMergeEffort != 0 {
-		q.WriteString(fmt.Sprintf(` IDLE ARRANGEMENT MERGE EFFORT = %d`, crb.idleArrangementMergeEffort))
+	if b.idleArrangementMergeEffort != 0 {
+		q.WriteString(fmt.Sprintf(` IDLE ARRANGEMENT MERGE EFFORT = %d`, b.idleArrangementMergeEffort))
 	}
 
 	q.WriteString(`;`)
 	return q.String()
 }
 
-func (crb *ClusterReplicaBuilder) Read() string {
+func (b *ClusterReplicaBuilder) Read() string {
 	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`SELECT * FROM mz_cluster_replicas WHERE id = %s;`, crb.replicaName))
+	q.WriteString(fmt.Sprintf(`
+		SELECT
+			mz_cluster_replicas.id,
+			mz_cluster_replicas.name,
+			mz_clusters.name,
+			mz_cluster_replicas.size,
+			mz_cluster_replicas.availability_zone
+		FROM mz_cluster_replicas
+		JOIN mz_clusters
+			ON mz_cluster_replicas.cluster_id = mz_clusters.id
+		WHERE mz_cluster_replicas.name = '%s'
+		AND mz_clusters.name = '%s';
+	`, b.replicaName, b.clusterName))
 	return q.String()
 }
 
-func (crb *ClusterReplicaBuilder) Drop() string {
+func (b *ClusterReplicaBuilder) Drop() string {
 	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`DROP CLUSTER REPLICA %s.%s;`, crb.clusterName, crb.replicaName))
+	q.WriteString(fmt.Sprintf(`DROP CLUSTER REPLICA %s.%s;`, b.clusterName, b.replicaName))
 	return q.String()
 }
 
-func (crb *ClusterReplicaBuilder) Rename(newName string) string {
-	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`ALTER CLUSTER REPLICA %s.%s TO %s;`, crb.clusterName, crb.replicaName, newName))
-	return q.String()
+func resourceClusterReplicaRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	conn := meta.(*sql.DB)
+	replicaName := d.Get("name").(string)
+	clusterName := d.Get("cluster_name").(string)
+
+	builder := newClusterReplicaBuilder(replicaName, clusterName)
+	q := builder.Read()
+
+	var id, name, cluster, size, availability_zone string
+	conn.QueryRow(q).Scan(&id, &name, &cluster, &size, &availability_zone)
+
+	d.SetId(id)
+	d.Set("replicaName", name)
+	d.Set("clusterName", cluster)
+	d.Set("size", size)
+	d.Set("availabilityZone", availability_zone)
+
+	return diags
 }
 
 func resourceClusterReplicaCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
+	conn := meta.(*sql.DB)
 
+	replicaName := d.Get("name").(string)
 	clusterName := d.Get("cluster_name").(string)
-	replicaName := d.Get("replica_name").(string)
 
-	builder := newClusterReplicaBuilder(clusterName, replicaName)
+	builder := newClusterReplicaBuilder(replicaName, clusterName)
 
 	// Set optionals
 	if v, ok := d.GetOk("size"); ok {
@@ -197,57 +225,24 @@ func resourceClusterReplicaCreate(ctx context.Context, d *schema.ResourceData, m
 
 	q := builder.Create()
 
-	diags := Exec(ctx, conn, q)
-	d.SetId(clusterName + ":" + replicaName)
-
-	return diags
-}
-
-func resourceClusterReplicaRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
-
-	clusterName := d.Get("cluster_name").(string)
-	replicaName := d.Get("replica_name").(string)
-
-	builder := newClusterReplicaBuilder(clusterName, replicaName)
-	q := builder.Create()
-
-	diags := Exec(ctx, conn, q)
-	d.SetId(clusterName + ":" + replicaName)
-
-	return diags
-}
-
-func resourceClusterReplicaUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
-
-	clusterName := d.Get("cluster_name").(string)
-	replicaName := d.Get("replica_name").(string)
-
-	if d.HasChange("name") {
-		updatedName := d.Get("name").(string)
-
-		builder := newClusterReplicaBuilder(clusterName, replicaName)
-		q := builder.Rename(replicaName)
-
-		Exec(ctx, conn, q)
-		d.Set("name", updatedName)
-	}
-
+	ExecResource(conn, q)
 	return resourceClusterReplicaRead(ctx, d, meta)
 }
 
+func resourceClusterReplicaUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	return diag.Errorf("not implemented")
+}
+
 func resourceClusterReplicaDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
+	var diags diag.Diagnostics
 
+	conn := meta.(*sql.DB)
+	replicaName := d.Get("name").(string)
 	clusterName := d.Get("cluster_name").(string)
-	replicaName := d.Get("replica_name").(string)
 
-	builder := newClusterReplicaBuilder(clusterName, replicaName)
+	builder := newClusterReplicaBuilder(replicaName, clusterName)
 	q := builder.Drop()
 
-	diags := Exec(ctx, conn, q)
-	d.SetId(clusterName + ":" + replicaName)
-
+	ExecResource(conn, q)
 	return diags
 }
