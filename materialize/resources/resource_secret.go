@@ -118,7 +118,7 @@ func resourceSecretCreate(ctx context.Context, d *schema.ResourceData, meta inte
 	builder := newSecretBuilder(secretName, schemaName)
 	q := builder.Create(value)
 
-	Exec(ctx, conn, q)
+	conn.Exec(q)
 	return resourceSecretRead(ctx, d, meta)
 }
 
@@ -132,7 +132,7 @@ func resourceSecretUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		builder := newSecretBuilder(oldName.(string), schemaName)
 		q := builder.Rename(newName.(string))
 
-		Exec(ctx, conn, q)
+		conn.Exec(q)
 		d.Set("secretName", newName)
 	}
 
@@ -142,7 +142,7 @@ func resourceSecretUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		builder := newSecretBuilder(oldValue.(string), schemaName)
 		q := builder.UpdateValue(newValue.(string))
 
-		Exec(ctx, conn, q)
+		conn.Exec(q)
 		d.Set("value", newValue)
 	}
 
@@ -150,6 +150,8 @@ func resourceSecretUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceSecretDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	conn := meta.(*sql.DB)
 	secretName := d.Get("name").(string)
 	schemaName := d.Get("schema_name").(string)
@@ -157,5 +159,6 @@ func resourceSecretDelete(ctx context.Context, d *schema.ResourceData, meta inte
 	builder := newSecretBuilder(secretName, schemaName)
 	q := builder.Drop()
 
-	return Exec(ctx, conn, q)
+	conn.Exec(q)
+	return diags
 }

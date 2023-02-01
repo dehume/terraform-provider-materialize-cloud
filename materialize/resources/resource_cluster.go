@@ -83,7 +83,7 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 	builder := newClusterBuilder(clusterName)
 	q := builder.Create()
 
-	Exec(ctx, conn, q)
+	conn.Exec(q)
 	return resourceClusterRead(ctx, d, meta)
 }
 
@@ -92,11 +92,14 @@ func resourceClusterUpdate(ctx context.Context, d *schema.ResourceData, meta any
 }
 
 func resourceClusterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	conn := meta.(*sql.DB)
 	clusterName := d.Get("name").(string)
 
 	builder := newClusterBuilder(clusterName)
 	q := builder.Drop()
 
-	return Exec(ctx, conn, q)
+	conn.Exec(q)
+	return diags
 }

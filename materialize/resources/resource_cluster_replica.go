@@ -225,7 +225,7 @@ func resourceClusterReplicaCreate(ctx context.Context, d *schema.ResourceData, m
 
 	q := builder.Create()
 
-	Exec(ctx, conn, q)
+	conn.Exec(q)
 	return resourceClusterReplicaRead(ctx, d, meta)
 }
 
@@ -234,13 +234,15 @@ func resourceClusterReplicaUpdate(ctx context.Context, d *schema.ResourceData, m
 }
 
 func resourceClusterReplicaDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*sql.DB)
+	var diags diag.Diagnostics
 
+	conn := meta.(*sql.DB)
 	replicaName := d.Get("name").(string)
 	clusterName := d.Get("cluster_name").(string)
 
 	builder := newClusterReplicaBuilder(replicaName, clusterName)
 	q := builder.Drop()
 
-	return Exec(ctx, conn, q)
+	conn.Exec(q)
+	return diags
 }

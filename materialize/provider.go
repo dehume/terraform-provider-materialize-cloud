@@ -4,17 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"sync"
 
 	"terraform-materialize/materialize/resources"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	_ "github.com/lib/pq" //PostgreSQL db
-)
-
-var (
-	dbRegistryLock sync.Mutex
 )
 
 func Provider() *schema.Provider {
@@ -68,9 +63,6 @@ func connectionString(host string, username string, password string, port int, d
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	dbRegistryLock.Lock()
-	defer dbRegistryLock.Unlock()
-
 	host := d.Get("host").(string)
 	username := d.Get("username").(string)
 	password := d.Get("password").(string)
