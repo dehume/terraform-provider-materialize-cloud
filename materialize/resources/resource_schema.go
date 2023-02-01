@@ -42,7 +42,8 @@ type SchemaBuilder struct {
 
 func newSchemaBuilder(schemaName, databaseName string) *SchemaBuilder {
 	return &SchemaBuilder{
-		schemaName: schemaName,
+		schemaName:   schemaName,
+		databaseName: databaseName,
 	}
 }
 
