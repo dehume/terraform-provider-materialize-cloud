@@ -19,3 +19,4 @@ build:
 	mkdir -p ${PLUGIN_PATH}
 	mv ${BINARY} ${PLUGIN_PATH}
 	rm -f examples/.terraform.lock.hcl
+	rm -f examples/.terraform.tfstate

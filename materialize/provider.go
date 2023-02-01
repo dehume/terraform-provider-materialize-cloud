@@ -89,7 +89,6 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		})
 		return nil, diags
 	}
-	defer db.Close()
 
 	return db, diags
 }
