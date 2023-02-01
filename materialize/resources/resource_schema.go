@@ -16,7 +16,6 @@ func Schema() *schema.Resource {
 
 		CreateContext: resourceSchemaCreate,
 		ReadContext:   resourceSchemaRead,
-		UpdateContext: resourceSchemaUpdate,
 		DeleteContext: resourceSchemaDelete,
 
 		Schema: map[string]*schema.Schema{
@@ -101,10 +100,6 @@ func resourceSchemaCreate(ctx context.Context, d *schema.ResourceData, meta inte
 
 	Exec(ctx, conn, q)
 	return resourceSchemaRead(ctx, d, meta)
-}
-
-func resourceSchemaUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	return diag.Errorf("not implemented")
 }
 
 func resourceSchemaDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
