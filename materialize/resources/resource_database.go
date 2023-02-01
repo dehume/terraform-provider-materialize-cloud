@@ -82,7 +82,7 @@ func resourceDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta in
 	builder := newDatabaseBuilder(databaseName)
 	q := builder.Create()
 
-	conn.Exec(q)
+	ExecResource(conn, q)
 	return resourceDatabaseRead(ctx, d, meta)
 }
 
@@ -99,6 +99,6 @@ func resourceDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta in
 	builder := newDatabaseBuilder(databaseName)
 	q := builder.Drop()
 
-	conn.Exec(q)
+	ExecResource(conn, q)
 	return diags
 }

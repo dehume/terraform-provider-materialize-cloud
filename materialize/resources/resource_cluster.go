@@ -83,7 +83,7 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 	builder := newClusterBuilder(clusterName)
 	q := builder.Create()
 
-	conn.Exec(q)
+	ExecResource(conn, q)
 	return resourceClusterRead(ctx, d, meta)
 }
 
@@ -100,6 +100,6 @@ func resourceClusterDelete(ctx context.Context, d *schema.ResourceData, meta int
 	builder := newClusterBuilder(clusterName)
 	q := builder.Drop()
 
-	conn.Exec(q)
+	ExecResource(conn, q)
 	return diags
 }
