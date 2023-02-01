@@ -2,12 +2,12 @@ package resources
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/jackc/pgx/v4"
 )
 
 func Secret() *schema.Resource {
@@ -92,7 +92,7 @@ func (b *SecretBuilder) Drop() string {
 func resourceSecretRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	conn := meta.(*pgx.Conn)
+	conn := meta.(*sql.DB)
 	secretName := d.Get("name").(string)
 	schemaName := d.Get("schema_name").(string)
 
@@ -100,7 +100,7 @@ func resourceSecretRead(ctx context.Context, d *schema.ResourceData, meta interf
 	q := builder.Read()
 
 	var id, name, schema string
-	conn.QueryRow(ctx, q).Scan(&id, &name, &schema)
+	conn.QueryRow(q).Scan(&id, &name, &schema)
 
 	d.SetId(id)
 	d.Set("secretName", name)
@@ -110,7 +110,7 @@ func resourceSecretRead(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceSecretCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
+	conn := meta.(*sql.DB)
 	secretName := d.Get("name").(string)
 	schemaName := d.Get("schema_name").(string)
 	value := d.Get("value").(string)
@@ -123,7 +123,7 @@ func resourceSecretCreate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceSecretUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
+	conn := meta.(*sql.DB)
 	schemaName := d.Get("name").(string)
 
 	if d.HasChange("name") {
@@ -150,7 +150,7 @@ func resourceSecretUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceSecretDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
+	conn := meta.(*sql.DB)
 	secretName := d.Get("name").(string)
 	schemaName := d.Get("schema_name").(string)
 

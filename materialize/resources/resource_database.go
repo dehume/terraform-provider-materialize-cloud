@@ -2,12 +2,12 @@ package resources
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/jackc/pgx/v4"
 )
 
 func Database() *schema.Resource {
@@ -60,14 +60,14 @@ func (b *DatabaseBuilder) Drop() string {
 func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	conn := meta.(*pgx.Conn)
+	conn := meta.(*sql.DB)
 	databaseName := d.Get("name").(string)
 
 	builder := newDatabaseBuilder(databaseName)
 	q := builder.Read()
 
 	var id, name string
-	conn.QueryRow(ctx, q).Scan(&id, &name)
+	conn.QueryRow(q).Scan(&id, &name)
 
 	d.SetId(id)
 	d.Set("databaseName", name)
@@ -76,7 +76,7 @@ func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta inte
 }
 
 func resourceDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
+	conn := meta.(*sql.DB)
 	databaseName := d.Get("name").(string)
 
 	builder := newDatabaseBuilder(databaseName)
@@ -91,7 +91,7 @@ func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta an
 }
 
 func resourceDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
+	conn := meta.(*sql.DB)
 	databaseName := d.Get("name").(string)
 
 	builder := newDatabaseBuilder(databaseName)

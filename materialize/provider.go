@@ -2,13 +2,19 @@ package provider
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"sync"
 
 	"terraform-materialize/materialize/resources"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/jackc/pgx/v4"
+	_ "github.com/lib/pq" //PostgreSQL db
+)
+
+var (
+	dbRegistryLock sync.Mutex
 )
 
 func Provider() *schema.Provider {
@@ -62,6 +68,9 @@ func connectionString(host string, username string, password string, port int, d
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+	dbRegistryLock.Lock()
+	defer dbRegistryLock.Unlock()
+
 	host := d.Get("host").(string)
 	username := d.Get("username").(string)
 	password := d.Get("password").(string)
@@ -71,7 +80,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	connStr := connectionString(host, username, password, port, database)
 
 	var diags diag.Diagnostics
-	c, err := pgx.Connect(ctx, connStr)
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		diags = append(diags, diag.Diagnostic{
 			Severity: diag.Error,
@@ -80,6 +89,7 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 		})
 		return nil, diags
 	}
+	defer db.Close()
 
-	return c, diags
+	return db, diags
 }

@@ -2,13 +2,13 @@ package resources
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/jackc/pgx/v4"
 )
 
 var replicaSizes = []string{
@@ -175,7 +175,7 @@ func (b *ClusterReplicaBuilder) Drop() string {
 func resourceClusterReplicaRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	conn := meta.(*pgx.Conn)
+	conn := meta.(*sql.DB)
 	replicaName := d.Get("name").(string)
 	clusterName := d.Get("cluster_name").(string)
 
@@ -183,7 +183,7 @@ func resourceClusterReplicaRead(ctx context.Context, d *schema.ResourceData, met
 	q := builder.Read()
 
 	var id, name, cluster, size, availability_zone string
-	conn.QueryRow(ctx, q).Scan(&id, &name, &cluster, &size, &availability_zone)
+	conn.QueryRow(q).Scan(&id, &name, &cluster, &size, &availability_zone)
 
 	d.SetId(id)
 	d.Set("replicaName", name)
@@ -195,7 +195,7 @@ func resourceClusterReplicaRead(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourceClusterReplicaCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
+	conn := meta.(*sql.DB)
 
 	replicaName := d.Get("name").(string)
 	clusterName := d.Get("cluster_name").(string)
@@ -234,7 +234,7 @@ func resourceClusterReplicaUpdate(ctx context.Context, d *schema.ResourceData, m
 }
 
 func resourceClusterReplicaDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
+	conn := meta.(*sql.DB)
 
 	replicaName := d.Get("name").(string)
 	clusterName := d.Get("cluster_name").(string)

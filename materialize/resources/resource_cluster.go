@@ -2,12 +2,12 @@ package resources
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/jackc/pgx/v4"
 )
 
 func Cluster() *schema.Resource {
@@ -61,14 +61,14 @@ func (b *ClusterBuilder) Drop() string {
 func resourceClusterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	conn := meta.(*pgx.Conn)
+	conn := meta.(*sql.DB)
 	clusterName := d.Get("name").(string)
 
 	builder := newClusterBuilder(clusterName)
 	q := builder.Read()
 
 	var id, name string
-	conn.QueryRow(ctx, q).Scan(&id, &name)
+	conn.QueryRow(q).Scan(&id, &name)
 
 	d.SetId(id)
 	d.Set("clusterName", name)
@@ -77,7 +77,7 @@ func resourceClusterRead(ctx context.Context, d *schema.ResourceData, meta inter
 }
 
 func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
+	conn := meta.(*sql.DB)
 	clusterName := d.Get("name").(string)
 
 	builder := newClusterBuilder(clusterName)
@@ -92,7 +92,7 @@ func resourceClusterUpdate(ctx context.Context, d *schema.ResourceData, meta any
 }
 
 func resourceClusterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
+	conn := meta.(*sql.DB)
 	clusterName := d.Get("name").(string)
 
 	builder := newClusterBuilder(clusterName)

@@ -15,10 +15,10 @@ provider "materialize" {
   database = local.database
 }
 
-# resource "materialize_secret" "example_secret" {
-#   name  = "example_dsh"
-#   value = "decode('c2VjcmV0Cg==X', 'base64')"
-# }
+resource "materialize_secret" "example_secret" {
+  name  = "example_dsh"
+  value = "decode('c2VjcmV0Cg==X', 'base64')"
+}
 
 # resource "materialize_database" "example_database" {
 #   name = "example_dsh"

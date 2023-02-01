@@ -2,12 +2,12 @@ package resources
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/jackc/pgx/v4"
 )
 
 func Schema() *schema.Resource {
@@ -74,7 +74,7 @@ func (b *SchemaBuilder) Drop() string {
 func resourceSchemaRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	conn := meta.(*pgx.Conn)
+	conn := meta.(*sql.DB)
 	schemaName := d.Get("name").(string)
 	databaseName := d.Get("database_name").(string)
 
@@ -82,7 +82,7 @@ func resourceSchemaRead(ctx context.Context, d *schema.ResourceData, meta interf
 	q := builder.Read()
 
 	var id, name, database string
-	conn.QueryRow(ctx, q).Scan(&id, &name, &database)
+	conn.QueryRow(q).Scan(&id, &name, &database)
 
 	d.SetId(id)
 	d.Set("databaseName", database)
@@ -92,7 +92,7 @@ func resourceSchemaRead(ctx context.Context, d *schema.ResourceData, meta interf
 }
 
 func resourceSchemaCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
+	conn := meta.(*sql.DB)
 	schemaName := d.Get("name").(string)
 	databaseName := d.Get("database_name").(string)
 
@@ -108,7 +108,7 @@ func resourceSchemaUpdate(ctx context.Context, d *schema.ResourceData, meta any)
 }
 
 func resourceSchemaDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*pgx.Conn)
+	conn := meta.(*sql.DB)
 	schemaName := d.Get("name").(string)
 	databaseName := d.Get("database_name").(string)
 
