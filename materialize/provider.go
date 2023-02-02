@@ -53,6 +53,7 @@ func Provider() *schema.Provider {
 			"materialize_database":        resources.Database(),
 			"materialize_schema":          resources.Schema(),
 			"materialize_secret":          resources.Secret(),
+			"materialize_source":          resources.Source(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}

@@ -12,11 +12,10 @@ import (
 
 func Database() *schema.Resource {
 	return &schema.Resource{
-		Description: "A secret securely stores sensitive credentials (like passwords and SSL keys) in Materialize’s secret management system.",
+		Description: "The highest level namespace hierarchy in Materialize.",
 
 		CreateContext: resourceDatabaseCreate,
 		ReadContext:   resourceDatabaseRead,
-		UpdateContext: resourceDatabaseUpdate,
 		DeleteContext: resourceDatabaseDelete,
 
 		Schema: map[string]*schema.Schema{
@@ -24,6 +23,7 @@ func Database() *schema.Resource {
 				Description: "The identifier for the database.",
 				Type:        schema.TypeString,
 				Optional:    true,
+				ForceNew:    true,
 			},
 		},
 	}
@@ -40,15 +40,11 @@ func newDatabaseBuilder(databaseName string) *DatabaseBuilder {
 }
 
 func (b *DatabaseBuilder) Create() string {
-	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`CREATE DATABASE %s;`, b.databaseName))
-	return q.String()
+	return fmt.Sprintf(`CREATE DATABASE %s;`, b.databaseName)
 }
 
 func (b *DatabaseBuilder) Read() string {
-	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`SELECT id, name FROM mz_databases WHERE name = '%s';`, b.databaseName))
-	return q.String()
+	return fmt.Sprintf(`SELECT id, name FROM mz_databases WHERE name = '%s';`, b.databaseName)
 }
 
 func (b *DatabaseBuilder) Drop() string {
@@ -84,10 +80,6 @@ func resourceDatabaseCreate(ctx context.Context, d *schema.ResourceData, meta in
 
 	ExecResource(conn, q)
 	return resourceDatabaseRead(ctx, d, meta)
-}
-
-func resourceDatabaseUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	return diag.Errorf("not implemented")
 }
 
 func resourceDatabaseDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

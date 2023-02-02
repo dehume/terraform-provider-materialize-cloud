@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -54,39 +53,29 @@ func newSecretBuilder(secretName, schemaName string) *SecretBuilder {
 }
 
 func (b *SecretBuilder) Create(value string) string {
-	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`CREATE SECRET %s.%s AS %s;`, b.schemaName, b.secretName, value))
-	return q.String()
+	return fmt.Sprintf(`CREATE SECRET %s.%s AS %s;`, b.schemaName, b.secretName, value)
 }
 
 func (b *SecretBuilder) Read() string {
-	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`
+	return fmt.Sprintf(`
 		SELECT mz_secrets.id, mz_secrets.name, mz_schemas.name
 		FROM mz_secrets JOIN mz_schemas
 			ON mz_secrets.schema_id = mz_schemas.id
 		WHERE mz_secrets.name = '%s'
 		AND mz_schemas.name = '%s';
-	`, b.secretName, b.schemaName))
-	return q.String()
+	`, b.secretName, b.schemaName)
 }
 
 func (b *SecretBuilder) Rename(newName string) string {
-	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`ALTER SECRET %s.%s RENAME TO %s.%s;`, b.schemaName, b.secretName, b.schemaName, newName))
-	return q.String()
+	return fmt.Sprintf(`ALTER SECRET %s.%s RENAME TO %s.%s;`, b.schemaName, b.secretName, b.schemaName, newName)
 }
 
 func (b *SecretBuilder) UpdateValue(newValue string) string {
-	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`ALTER SECRET %s.%s AS %s;`, b.schemaName, b.secretName, newValue))
-	return q.String()
+	return fmt.Sprintf(`ALTER SECRET %s.%s AS %s;`, b.schemaName, b.secretName, newValue)
 }
 
 func (b *SecretBuilder) Drop() string {
-	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`DROP SECRET %s.%s;`, b.schemaName, b.secretName))
-	return q.String()
+	return fmt.Sprintf(`DROP SECRET %s.%s;`, b.schemaName, b.secretName)
 }
 
 func resourceSecretRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

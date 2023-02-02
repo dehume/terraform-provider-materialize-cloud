@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -16,7 +15,6 @@ func Cluster() *schema.Resource {
 
 		CreateContext: resourceClusterCreate,
 		ReadContext:   resourceClusterRead,
-		UpdateContext: resourceClusterUpdate,
 		DeleteContext: resourceClusterDelete,
 
 		Schema: map[string]*schema.Schema{
@@ -24,6 +22,7 @@ func Cluster() *schema.Resource {
 				Description: "A name for the cluster.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 		},
 	}
@@ -40,22 +39,16 @@ func newClusterBuilder(clusterName string) *ClusterBuilder {
 }
 
 func (b *ClusterBuilder) Create() string {
-	q := strings.Builder{}
 	// Only create empty clusters, manage replicas with separate resource
-	q.WriteString(fmt.Sprintf(`CREATE CLUSTER %s REPLICAS ();`, b.clusterName))
-	return q.String()
+	return fmt.Sprintf(`CREATE CLUSTER %s REPLICAS ();`, b.clusterName)
 }
 
 func (b *ClusterBuilder) Read() string {
-	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`SELECT id, name FROM mz_clusters WHERE name = '%s';`, b.clusterName))
-	return q.String()
+	return fmt.Sprintf(`SELECT id, name FROM mz_clusters WHERE name = '%s';`, b.clusterName)
 }
 
 func (b *ClusterBuilder) Drop() string {
-	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`DROP CLUSTER %s;`, b.clusterName))
-	return q.String()
+	return fmt.Sprintf(`DROP CLUSTER %s;`, b.clusterName)
 }
 
 func resourceClusterRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -85,10 +78,6 @@ func resourceClusterCreate(ctx context.Context, d *schema.ResourceData, meta int
 
 	ExecResource(conn, q)
 	return resourceClusterRead(ctx, d, meta)
-}
-
-func resourceClusterUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	return diag.Errorf("not implemented")
 }
 
 func resourceClusterDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

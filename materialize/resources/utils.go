@@ -13,7 +13,6 @@ func ExecResource(conn *sql.DB, queryStr string) diag.Diagnostics {
 
 	if execErr != nil {
 		return diag.FromErr(execErr)
-
 	}
 
 	return diags
