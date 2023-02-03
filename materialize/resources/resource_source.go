@@ -409,12 +409,6 @@ func resourceSourceRead(ctx context.Context, d *schema.ResourceData, meta interf
 	conn.QueryRow(q).Scan(&id, &name, &source_type, &size, &envelope_type, &connection_name, &cluster_name)
 
 	d.SetId(id)
-	d.Set("sourceName", name)
-	d.Set("schemaName", source_type)
-	d.Set("size", size)
-	d.Set("envelopeType", envelope_type)
-	d.Set("connectionName", connection_name)
-	d.Set("clusterName", cluster_name)
 
 	return diags
 }

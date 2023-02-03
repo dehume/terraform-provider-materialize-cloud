@@ -20,3 +20,4 @@ build:
 	mv ${BINARY} ${PLUGIN_PATH}
 	rm -f examples/.terraform.lock.hcl
 	rm -f examples/terraform.tfstate
+	rm -f examples/terraform.tfstate.backup

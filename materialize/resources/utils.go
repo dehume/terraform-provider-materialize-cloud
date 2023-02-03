@@ -9,10 +9,9 @@ import (
 func ExecResource(conn *sql.DB, queryStr string) diag.Diagnostics {
 	var diags diag.Diagnostics
 
-	_, execErr := conn.Exec(queryStr)
-
-	if execErr != nil {
-		return diag.FromErr(execErr)
+	_, err := conn.Exec(queryStr)
+	if err != nil {
+		return diag.FromErr(err)
 	}
 
 	return diags

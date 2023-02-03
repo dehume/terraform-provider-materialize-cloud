@@ -64,7 +64,6 @@ func resourceClusterRead(ctx context.Context, d *schema.ResourceData, meta inter
 	conn.QueryRow(q).Scan(&id, &name)
 
 	d.SetId(id)
-	d.Set("clusterName", name)
 
 	return diags
 }
