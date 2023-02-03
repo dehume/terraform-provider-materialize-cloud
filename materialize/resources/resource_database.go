@@ -66,7 +66,6 @@ func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta inte
 	conn.QueryRow(q).Scan(&id, &name)
 
 	d.SetId(id)
-	d.Set("databaseName", name)
 
 	return diags
 }

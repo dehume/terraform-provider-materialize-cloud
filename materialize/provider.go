@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"terraform-materialize/materialize/datasources"
 	"terraform-materialize/materialize/resources"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -54,6 +55,9 @@ func Provider() *schema.Provider {
 			"materialize_schema":          resources.Schema(),
 			"materialize_secret":          resources.Secret(),
 			"materialize_source":          resources.Source(),
+		},
+		DataSourcesMap: map[string]*schema.Resource{
+			"materialize_cluster": datasources.DatasourceCluster(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}

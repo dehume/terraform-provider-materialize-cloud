@@ -174,10 +174,6 @@ func resourceClusterReplicaRead(ctx context.Context, d *schema.ResourceData, met
 	conn.QueryRow(q).Scan(&id, &name, &cluster, &size, &availability_zone)
 
 	d.SetId(id)
-	d.Set("replicaName", name)
-	d.Set("clusterName", cluster)
-	d.Set("size", size)
-	d.Set("availabilityZone", availability_zone)
 
 	return diags
 }
