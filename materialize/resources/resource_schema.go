@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -12,11 +11,10 @@ import (
 
 func Schema() *schema.Resource {
 	return &schema.Resource{
-		Description: "A secret securely stores sensitive credentials (like passwords and SSL keys) in Materialize’s secret management system.",
+		Description: "The highest level namespace hierarchy in Materialize.",
 
 		CreateContext: resourceSchemaCreate,
 		ReadContext:   resourceSchemaRead,
-		UpdateContext: resourceSchemaUpdate,
 		DeleteContext: resourceSchemaDelete,
 
 		Schema: map[string]*schema.Schema{
@@ -24,11 +22,13 @@ func Schema() *schema.Resource {
 				Description: "The name of the schema.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"database_name": {
 				Description: "The name of the database.",
 				Type:        schema.TypeString,
 				Optional:    true,
+				ForceNew:    true,
 				Default:     "materialize",
 			},
 		},
@@ -48,27 +48,21 @@ func newSchemaBuilder(schemaName, databaseName string) *SchemaBuilder {
 }
 
 func (b *SchemaBuilder) Create() string {
-	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`CREATE SCHEMA %s.%s;`, b.databaseName, b.schemaName))
-	return q.String()
+	return fmt.Sprintf(`CREATE SCHEMA %s.%s;`, b.databaseName, b.schemaName)
 }
 
 func (b *SchemaBuilder) Read() string {
-	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`
+	return fmt.Sprintf(`
 		SELECT mz_schemas.id, mz_schemas.name, mz_databases.name
 		FROM mz_schemas JOIN mz_databases
 			ON mz_schemas.database_id = mz_databases.id
 		WHERE mz_schemas.name = '%s'
 		AND mz_databases.name = '%s';	
-	`, b.schemaName, b.databaseName))
-	return q.String()
+	`, b.schemaName, b.databaseName)
 }
 
 func (b *SchemaBuilder) Drop() string {
-	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`DROP SCHEMA %s.%s;`, b.databaseName, b.schemaName))
-	return q.String()
+	return fmt.Sprintf(`DROP SCHEMA %s.%s;`, b.databaseName, b.schemaName)
 }
 
 func resourceSchemaRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -101,10 +95,6 @@ func resourceSchemaCreate(ctx context.Context, d *schema.ResourceData, meta inte
 
 	ExecResource(conn, q)
 	return resourceSchemaRead(ctx, d, meta)
-}
-
-func resourceSchemaUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	return diag.Errorf("not implemented")
 }
 
 func resourceSchemaDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

@@ -11,27 +11,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
-var replicaSizes = []string{
-	"2xsmall",
-	"xsmall",
-	"small",
-	"medium",
-	"large",
-	"xlarge",
-	"x2large",
-	"x3large",
-	"x4large",
-	"x5large",
-	"x6large",
-}
-
 func ClusterReplica() *schema.Resource {
 	return &schema.Resource{
-		Description: "A logical cluster, which contains dataflow-powered objects.",
+		Description: "A cluster replica is the physical resource which maintains dataflow-powered objects.",
 
 		CreateContext: resourceClusterReplicaCreate,
 		ReadContext:   resourceClusterReplicaRead,
-		UpdateContext: resourceClusterReplicaUpdate,
 		DeleteContext: resourceClusterReplicaDelete,
 
 		Schema: map[string]*schema.Schema{
@@ -39,40 +24,47 @@ func ClusterReplica() *schema.Resource {
 				Description: "A name for this replica.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"cluster_name": {
 				Description: "The cluster whose resources you want to create an additional computation of.",
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 			},
 			"size": {
 				Description:  "The size of the replica.",
 				Type:         schema.TypeString,
 				Required:     true,
+				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice(replicaSizes, true),
 			},
 			"availability_zone": {
 				Description:  "If you want the replica to reside in a specific availability zone.",
 				Type:         schema.TypeString,
 				Optional:     true,
-				ValidateFunc: validation.StringInSlice([]string{"us-east-1", "eu-west-1"}, true),
+				ForceNew:     true,
+				ValidateFunc: validation.StringInSlice(regions, true),
 			},
 			"introspection_interval": {
 				Description: "The interval at which to collect introspection data.",
 				Type:        schema.TypeString,
 				Optional:    true,
+				ForceNew:    true,
 				Default:     "1s",
 			},
 			"introspection_debugging": {
 				Description: "Whether to introspect the gathering of the introspection data.",
 				Type:        schema.TypeBool,
 				Optional:    true,
+				ForceNew:    true,
 				Default:     false,
 			},
 			"idle_arrangement_merge_effort": {
-				Description: "The amount of effort the replica should exert on compacting arrangements during idle periods.",
+				Description: "The amount of effort the replica should exert on compacting arrangements during idle periods. This is an unstable option! It may be changed or removed at any time.",
 				Type:        schema.TypeInt,
 				Optional:    true,
+				ForceNew:    true,
 			},
 		},
 	}
@@ -149,8 +141,7 @@ func (b *ClusterReplicaBuilder) Create() string {
 }
 
 func (b *ClusterReplicaBuilder) Read() string {
-	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`
+	return fmt.Sprintf(`
 		SELECT
 			mz_cluster_replicas.id,
 			mz_cluster_replicas.name,
@@ -162,14 +153,11 @@ func (b *ClusterReplicaBuilder) Read() string {
 			ON mz_cluster_replicas.cluster_id = mz_clusters.id
 		WHERE mz_cluster_replicas.name = '%s'
 		AND mz_clusters.name = '%s';
-	`, b.replicaName, b.clusterName))
-	return q.String()
+	`, b.replicaName, b.clusterName)
 }
 
 func (b *ClusterReplicaBuilder) Drop() string {
-	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`DROP CLUSTER REPLICA %s.%s;`, b.clusterName, b.replicaName))
-	return q.String()
+	return fmt.Sprintf(`DROP CLUSTER REPLICA %s.%s;`, b.clusterName, b.replicaName)
 }
 
 func resourceClusterReplicaRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
@@ -202,7 +190,6 @@ func resourceClusterReplicaCreate(ctx context.Context, d *schema.ResourceData, m
 
 	builder := newClusterReplicaBuilder(replicaName, clusterName)
 
-	// Set optionals
 	if v, ok := d.GetOk("size"); ok {
 		builder.Size(v.(string))
 	}
@@ -227,10 +214,6 @@ func resourceClusterReplicaCreate(ctx context.Context, d *schema.ResourceData, m
 
 	ExecResource(conn, q)
 	return resourceClusterReplicaRead(ctx, d, meta)
-}
-
-func resourceClusterReplicaUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	return diag.Errorf("not implemented")
 }
 
 func resourceClusterReplicaDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
