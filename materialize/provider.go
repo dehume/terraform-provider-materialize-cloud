@@ -54,6 +54,7 @@ func Provider() *schema.Provider {
 			"materialize_database":        resources.Database(),
 			"materialize_schema":          resources.Schema(),
 			"materialize_secret":          resources.Secret(),
+			"materialize_sink":            resources.Sink(),
 			"materialize_source":          resources.Source(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{

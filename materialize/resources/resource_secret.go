@@ -120,7 +120,6 @@ func resourceSecretUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		q := builder.Rename(newName.(string))
 
 		ExecResource(conn, q)
-		d.Set("secretName", newName)
 	}
 
 	if d.HasChange("value") {
@@ -130,7 +129,6 @@ func resourceSecretUpdate(ctx context.Context, d *schema.ResourceData, meta inte
 		q := builder.UpdateValue(newValue.(string))
 
 		ExecResource(conn, q)
-		d.Set("value", newValue)
 	}
 
 	return resourceSecretRead(ctx, d, meta)
