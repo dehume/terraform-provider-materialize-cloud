@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -48,9 +47,7 @@ func (b *DatabaseBuilder) Read() string {
 }
 
 func (b *DatabaseBuilder) Drop() string {
-	q := strings.Builder{}
-	q.WriteString(fmt.Sprintf(`DROP DATABASE %s;`, b.databaseName))
-	return q.String()
+	return fmt.Sprintf(`DROP DATABASE %s;`, b.databaseName)
 }
 
 func resourceDatabaseRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {

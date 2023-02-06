@@ -27,7 +27,7 @@ func Source() *schema.Resource {
 				Required:    true,
 			},
 			"schema_name": {
-				Description: "The identifier for the secret schema.",
+				Description: "The identifier for the source schema.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "public",
@@ -39,7 +39,7 @@ func Source() *schema.Resource {
 				ConflictsWith: []string{"size"},
 			},
 			"size": {
-				Description:   "The size of the cluster.",
+				Description:   "The size of the source.",
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
@@ -120,7 +120,7 @@ func Source() *schema.Resource {
 				RequiredWith: []string{"kafka_connection"},
 			},
 			"include_key": {
-				Description: "	Include a column containing the Kafka message key. If the key is encoded using a format that includes schemas the column will take its name from the schema. For unnamed formats (e.g. TEXT), the column will be named key. ",
+				Description: "Include a column containing the Kafka message key. If the key is encoded using a format that includes schemas the column will take its name from the schema. For unnamed formats (e.g. TEXT), the column will be named key. ",
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
@@ -144,20 +144,20 @@ func Source() *schema.Resource {
 				ForceNew:    true,
 			},
 			"format": {
-				Description: "Include a timestamp column containing the Kafka message timestamp.",
+				Description: "How to decode raw bytes from different formats into data structures it can understand at runtime",
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
 			},
 			"envelope": {
-				Description:  "Include a timestamp column containing the Kafka message timestamp.",
+				Description:  "How to interpret records (e.g. Append Only, Upsert).",
 				Type:         schema.TypeString,
 				Optional:     true,
 				ForceNew:     true,
 				ValidateFunc: validation.StringInSlice(envelopes, true),
 			},
 			"schema_registry_connection": {
-				Description: "Include a timestamp column containing the Kafka message timestamp.",
+				Description: "The name of the connection to use for the shcema registry.",
 				Type:        schema.TypeString,
 				Optional:    true,
 				ForceNew:    true,
