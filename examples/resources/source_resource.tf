@@ -1,4 +1,4 @@
-resource "materialize_secret" "example_source_load_generator" {
+resource "materialize_source" "example_source_load_generator" {
   name                = "source_load_generator"
   schema_name         = "schema"
   size                = "3xsmall"
@@ -13,7 +13,7 @@ resource "materialize_secret" "example_source_load_generator" {
 #   (TICK INTERVAL '500ms' SCALE FACTOR 0.01)
 #   WITH (SIZE = '3xsmall');
 
-resource "materialize_secret" "example_source_postgres" {
+resource "materialize_source" "example_source_postgres" {
   name                = "source_postgres"
   schema_name         = "schema"
   size                = "3xsmall"
@@ -31,7 +31,7 @@ resource "materialize_secret" "example_source_postgres" {
 #   FOR TABLES (schema1.table_1 AS s1_table_1, schema2_table_1 AS s2_table_1)
 #   WITH (SIZE = '3xsmall');
 
-resource "materialize_secret" "example_source_kafka" {
+resource "materialize_source" "example_source_kafka" {
   name                       = "source_kafka"
   schema_name                = "schema"
   size                       = "3xsmall"

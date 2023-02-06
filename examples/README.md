@@ -2,8 +2,34 @@
 
 This directory contains examples that are mostly used for documentation, but can also be run/tested manually via the Terraform CLI.
 
-The document generation tool looks for files in the following locations by default. All other *.tf files besides the ones mentioned below are ignored by the documentation tool. This is useful for creating examples that can run and/or ar testable even if some parts are not relevant for the documentation.
+## Test sample configuration
 
-* **provider/provider.tf** example file for the provider index page
-* **data-sources/<full data source name>/data-source.tf** example file for the named data source page
-* **resources/<full resource name>/resource.tf** example file for the named data source page
+First, build and install the provider (in the root directory).
+
+```shell
+$ make install
+```
+
+Then, navigate to the `examples` directory. 
+
+```shell
+$ cd examples
+```
+
+Create a file `locals.tf` with your Materialize connection details
+*locals.tf*
+```terraform
+locals {
+  host     = "xxx.us-east-1.aws.materialize.cloud"
+  username = "{YOUR Username}"
+  password = "{YOUR App Password}"
+  port     = 6875
+  database = "materialize"
+}
+```
+
+Run the following command to initialize the workspace and apply the sample configuration.
+
+```shell
+$ terraform init && terraform apply
+```

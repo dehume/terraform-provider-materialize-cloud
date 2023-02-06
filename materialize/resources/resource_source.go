@@ -64,19 +64,17 @@ func Source() *schema.Resource {
 				ConflictsWith: []string{"postgres_connection", "publication"},
 			},
 			"tick_interval": {
-				Description:   "The interval at which the next datum should be emitted. Defaults to one second.",
-				Type:          schema.TypeString,
-				Optional:      true,
-				ForceNew:      true,
-				ConflictsWith: []string{"postgres_connection", "publication"},
+				Description: "The interval at which the next datum should be emitted. Defaults to one second.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
 			},
 			"scale_factor": {
-				Description:   "The scale factor for the TPCH generator. Defaults to 0.01 (~ 10MB).",
-				Type:          schema.TypeFloat,
-				Optional:      true,
-				Default:       0.01,
-				ForceNew:      true,
-				ConflictsWith: []string{"postgres_connection", "publication"},
+				Description: "The scale factor for the TPCH generator. Defaults to 0.01 (~ 10MB).",
+				Type:        schema.TypeFloat,
+				Optional:    true,
+				Default:     0.01,
+				ForceNew:    true,
 			},
 			// Postgres
 			"postgres_connection": {
@@ -84,15 +82,16 @@ func Source() *schema.Resource {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
-				ConflictsWith: []string{"kafka_connection"},
-				RequiredWith:  []string{"publication"},
+				ConflictsWith: []string{"kafka_connection", "load_generator_type"},
+				RequiredWith:  []string{"postgres_connection", "publication"},
 			},
 			"publication": {
-				Description:  "The PostgreSQL publication (the replication data set containing the tables to be streamed to Materialize).",
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				RequiredWith: []string{"postgres_connection"},
+				Description:   "The PostgreSQL publication (the replication data set containing the tables to be streamed to Materialize).",
+				Type:          schema.TypeString,
+				Optional:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{"kafka_connection", "load_generator_type"},
+				RequiredWith:  []string{"postgres_connection", "publication"},
 			},
 			"tables": {
 				Description: "Creates subsources for specific tables in the load generator.",
@@ -110,15 +109,16 @@ func Source() *schema.Resource {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
-				ConflictsWith: []string{"postgres_connection", "publication"},
-				RequiredWith:  []string{"topic"},
+				ConflictsWith: []string{"load_generator_type", "postgres_connection"},
+				RequiredWith:  []string{"kafka_connection", "topic"},
 			},
 			"topic": {
-				Description:  "The Kafka topic you want to subscribe to.",
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				RequiredWith: []string{"kafka_connection"},
+				Description:   "The Kafka topic you want to subscribe to.",
+				Type:          schema.TypeString,
+				Optional:      true,
+				ForceNew:      true,
+				ConflictsWith: []string{"load_generator_type", "postgres_connection"},
+				RequiredWith:  []string{"kafka_connection", "topic"},
 			},
 			"include_key": {
 				Description: "Include a column containing the Kafka message key. If the key is encoded using a format that includes schemas the column will take its name from the schema. For unnamed formats (e.g. TEXT), the column will be named key. ",
@@ -175,7 +175,7 @@ type SourceBuilder struct {
 	connectionType           string
 	loadGeneratorType        string
 	tickInterval             string
-	scaleFactor              float32
+	scaleFactor              float64
 	postgresConnection       string
 	publication              string
 	tables                   map[string]string
@@ -227,7 +227,7 @@ func (b *SourceBuilder) TickInterval(t string) *SourceBuilder {
 	return b
 }
 
-func (b *SourceBuilder) ScaleFactor(s float32) *SourceBuilder {
+func (b *SourceBuilder) ScaleFactor(s float64) *SourceBuilder {
 	b.scaleFactor = s
 	return b
 }
@@ -454,7 +454,7 @@ func resourceSourceCreate(ctx context.Context, d *schema.ResourceData, meta any)
 	}
 
 	if v, ok := d.GetOk("scale_factor"); ok {
-		builder.ScaleFactor(v.(float32))
+		builder.ScaleFactor(v.(float64))
 	}
 
 	if v, ok := d.GetOk("publication"); ok {

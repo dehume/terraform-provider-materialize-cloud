@@ -47,11 +47,10 @@ func Sink() *schema.Resource {
 				ConflictsWith: []string{"cluster_name"},
 			},
 			"item_name": {
-				Description:  "The name of the source, table or materialized view you want to send to the sink.",
-				Type:         schema.TypeString,
-				Optional:     true,
-				ForceNew:     true,
-				RequiredWith: []string{"topic"},
+				Description: "The name of the source, table or materialized view you want to send to the sink.",
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
 			},
 			// Broker
 			"kafka_connection": {
@@ -59,14 +58,14 @@ func Sink() *schema.Resource {
 				Type:         schema.TypeString,
 				Optional:     true,
 				ForceNew:     true,
-				RequiredWith: []string{"topic"},
+				RequiredWith: []string{"kafka_connection", "topic"},
 			},
 			"topic": {
 				Description:  "The Kafka topic you want to subscribe to.",
 				Type:         schema.TypeString,
 				Optional:     true,
 				ForceNew:     true,
-				RequiredWith: []string{"kafka_connection"},
+				RequiredWith: []string{"kafka_connection", "topic"},
 			},
 			"format": {
 				Description: "How to decode raw bytes from different formats into data structures it can understand at runtime",
