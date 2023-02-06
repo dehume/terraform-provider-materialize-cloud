@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -321,8 +322,15 @@ func (b *SourceBuilder) Create() string {
 
 		var o []string
 		if len(b.tables) > 0 {
-			for t, a := range b.tables {
-				s := fmt.Sprintf(`%s AS %s`, t, a)
+			// Need to sort tables to ensure order for tests
+			var keys []string
+			for k := range b.tables {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+
+			for _, k := range keys {
+				s := fmt.Sprintf(`%s AS %s`, k, b.tables[k])
 				o = append(o, s)
 			}
 			o := strings.Join(o[:], ", ")
@@ -506,7 +514,6 @@ func resourceSourceUpdate(ctx context.Context, d *schema.ResourceData, meta any)
 		q := builder.Rename(newName.(string))
 
 		ExecResource(conn, q)
-		d.Set("secretName", newName)
 	}
 
 	if d.HasChange("size") {
@@ -517,7 +524,6 @@ func resourceSourceUpdate(ctx context.Context, d *schema.ResourceData, meta any)
 		q := builder.UpdateSize(newSize.(string))
 
 		ExecResource(conn, q)
-		d.Set("size", newSize)
 	}
 
 	return resourceSecretRead(ctx, d, meta)

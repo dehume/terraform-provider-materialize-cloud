@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 
@@ -222,17 +223,105 @@ func (b *SinkBuilder) Drop() string {
 }
 
 func resourceSinkCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	return diag.Errorf("not implemented")
+	conn := meta.(*sql.DB)
+
+	sinkName := d.Get("name").(string)
+	schemaName := d.Get("schema_name").(string)
+
+	builder := newSinkBuilder(sinkName, schemaName)
+
+	if v, ok := d.GetOk("cluster_name"); ok {
+		builder.ClusterName(v.(string))
+	}
+
+	if v, ok := d.GetOk("size"); ok {
+		builder.Size(v.(string))
+	}
+
+	if v, ok := d.GetOk("item_name"); ok {
+		builder.ItemName(v.(string))
+	}
+
+	if v, ok := d.GetOk("kafka_connection"); ok {
+		builder.KafkaConnection(v.(string))
+	}
+
+	if v, ok := d.GetOk("topic"); ok {
+		builder.Topic(v.(string))
+	}
+
+	if v, ok := d.GetOk("format"); ok {
+		builder.Format(v.(string))
+	}
+
+	if v, ok := d.GetOk("envelope"); ok {
+		builder.Envelope(v.(string))
+	}
+
+	if v, ok := d.GetOk("schema_registry_connection"); ok {
+		builder.SchemaRegistryConnection(v.(string))
+	}
+
+	q := builder.Create()
+
+	ExecResource(conn, q)
+	return resourceSourceRead(ctx, d, meta)
 }
 
 func resourceSinkRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	return diag.Errorf("not implemented")
+	var diags diag.Diagnostics
+
+	conn := meta.(*sql.DB)
+	sinkName := d.Get("name").(string)
+	schemaName := d.Get("schema_name").(string)
+
+	builder := newSinkBuilder(sinkName, schemaName)
+	q := builder.Read()
+
+	var id, name, sink_type, size, envelope_type, connection_name, cluster_name string
+	conn.QueryRow(q).Scan(&id, &name, &sink_type, &size, &envelope_type, &connection_name, &cluster_name)
+
+	d.SetId(id)
+
+	return diags
 }
 
 func resourceSinkUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	return diag.Errorf("not implemented")
+	conn := meta.(*sql.DB)
+	schemaName := d.Get("name").(string)
+
+	if d.HasChange("name") {
+		oldName, newName := d.GetChange("name")
+
+		builder := newSinkBuilder(oldName.(string), schemaName)
+		q := builder.Rename(newName.(string))
+
+		ExecResource(conn, q)
+	}
+
+	if d.HasChange("size") {
+		sourceName := d.Get("sourceName").(string)
+		_, newSize := d.GetChange("size")
+
+		builder := newSinkBuilder(sourceName, schemaName)
+		q := builder.UpdateSize(newSize.(string))
+
+		ExecResource(conn, q)
+	}
+
+	return resourceSecretRead(ctx, d, meta)
 }
 
 func resourceSinkDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	return diag.Errorf("not implemented")
+	var diags diag.Diagnostics
+
+	conn := meta.(*sql.DB)
+	sinkName := d.Get("name").(string)
+	schemaName := d.Get("schema_name").(string)
+
+	builder := newSinkBuilder(sinkName, schemaName)
+	q := builder.Drop()
+
+	ExecResource(conn, q)
+	return diags
 }
