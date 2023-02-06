@@ -1,6 +1,7 @@
 NAME=materialize
 BINARY=terraform-provider-${NAME}
-PLUGIN_PATH=~/.terraform.d/plugins/materialize.com/devex/materialize/0.1/darwin_arm64
+PLATFORM=darwin_arm64
+PLUGIN_PATH=~/.terraform.d/plugins/materialize.com/devex/materialize/0.1/${PLATFORM}
 
 default: testacc
 
@@ -9,15 +10,19 @@ fmt:
 	gofmt -l -s -w .
 	terraform fmt -recursive
 
-.PHONY: test
-test:
-	TF_ACC=1 go test ./... -v $(TESTARGS) -timeout 120m
-
 .PHONY: build
 build:
 	go build -o ${BINARY}
+
+.PHONY: release
+release:
+	goreleaser release --rm-dist --snapshot --skip-publish  --skip-sign
+
+.PHONY: install
+install:
 	mkdir -p ${PLUGIN_PATH}
-	mv ${BINARY} ${PLUGIN_PATH}
-	rm -f examples/.terraform.lock.hcl
-	rm -f examples/terraform.tfstate
-	rm -f examples/terraform.tfstate.backup
+	go build -o ${PLUGIN_PATH}/${BINARY}
+
+.PHONY: testacc
+testacc:
+	TF_ACC=1 go test ./... -v $(TESTARGS) -timeout 120m
